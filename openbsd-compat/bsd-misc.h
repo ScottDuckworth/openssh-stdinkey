@@ -1,4 +1,4 @@
-/* $Id: bsd-misc.h,v 1.20 2012/02/14 18:03:31 tim Exp $ */
+/* $Id: bsd-misc.h,v 1.23 2013/03/14 23:34:27 djm Exp $ */
 
 /*
  * Copyright (c) 1999-2004 Damien Miller <djm@mindrot.org>
@@ -51,6 +51,9 @@ int setegid(uid_t);
 const char *strerror(int);
 #endif 
 
+#if !defined(HAVE_SETLINEBUF)
+#define setlinebuf(a)	(setvbuf((a), NULL, _IOLBF, 0))
+#endif
 
 #ifndef HAVE_UTIMES
 #ifndef HAVE_STRUCT_TIMEVAL
@@ -77,6 +80,10 @@ struct timespec {
 int nanosleep(const struct timespec *, struct timespec *);
 #endif
 
+#ifndef HAVE_USLEEP
+int usleep(unsigned int useconds);
+#endif
+
 #ifndef HAVE_TCGETPGRP
 pid_t tcgetpgrp(int);
 #endif
@@ -97,6 +104,10 @@ mysig_t mysignal(int sig, mysig_t act);
 
 #ifndef HAVE_ISBLANK
 int	isblank(int);
+#endif
+
+#ifndef HAVE_GETPGID
+pid_t getpgid(pid_t);
 #endif
 
 #endif /* _BSD_MISC_H */

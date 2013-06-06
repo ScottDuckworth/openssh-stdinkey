@@ -44,6 +44,7 @@
 #include <linux/audit.h>
 #include <linux/filter.h>
 #include <linux/seccomp.h>
+#include <elf.h>
 
 #include <asm/unistd.h>
 
@@ -90,7 +91,9 @@ static const struct sock_filter preauth_insns[] = {
 	SC_DENY(open, EACCES),
 	SC_ALLOW(getpid),
 	SC_ALLOW(gettimeofday),
+#ifdef __NR_time /* not defined on EABI ARM */
 	SC_ALLOW(time),
+#endif
 	SC_ALLOW(read),
 	SC_ALLOW(write),
 	SC_ALLOW(close),
@@ -102,7 +105,12 @@ static const struct sock_filter preauth_insns[] = {
 	SC_ALLOW(select),
 #endif
 	SC_ALLOW(madvise),
+#ifdef __NR_mmap2 /* EABI ARM only has mmap2() */
+	SC_ALLOW(mmap2),
+#endif
+#ifdef __NR_mmap
 	SC_ALLOW(mmap),
+#endif
 	SC_ALLOW(munmap),
 	SC_ALLOW(exit_group),
 #ifdef __NR_rt_sigprocmask
@@ -179,6 +187,7 @@ void
 ssh_sandbox_child(struct ssh_sandbox *box)
 {
 	struct rlimit rl_zero;
+	int nnp_failed = 0;
 
 	/* Set rlimits for completeness if possible. */
 	rl_zero.rlim_cur = rl_zero.rlim_max = 0;
@@ -197,13 +206,18 @@ ssh_sandbox_child(struct ssh_sandbox *box)
 #endif /* SANDBOX_SECCOMP_FILTER_DEBUG */
 
 	debug3("%s: setting PR_SET_NO_NEW_PRIVS", __func__);
-	if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == -1)
-		fatal("%s: prctl(PR_SET_NO_NEW_PRIVS): %s",
+	if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) == -1) {
+		debug("%s: prctl(PR_SET_NO_NEW_PRIVS): %s",
 		      __func__, strerror(errno));
+		nnp_failed = 1;
+	}
 	debug3("%s: attaching seccomp filter program", __func__);
 	if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &preauth_program) == -1)
-		fatal("%s: prctl(PR_SET_SECCOMP): %s",
+		debug("%s: prctl(PR_SET_SECCOMP): %s",
 		      __func__, strerror(errno));
+	else if (nnp_failed)
+		fatal("%s: SECCOMP_MODE_FILTER activated but "
+		    "PR_SET_NO_NEW_PRIVS failed", __func__);
 }
 
 void
