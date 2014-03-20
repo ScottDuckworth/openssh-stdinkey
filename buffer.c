@@ -1,4 +1,4 @@
-/* $OpenBSD: buffer.c,v 1.32 2010/02/09 03:56:28 djm Exp $ */
+/* $OpenBSD: buffer.c,v 1.34 2013/11/08 11:15:19 dtucker Exp $ */
 /*
  * Author: Tatu Ylonen <ylo@cs.hut.fi>
  * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "xmalloc.h"
 #include "buffer.h"
@@ -50,7 +51,7 @@ buffer_free(Buffer *buffer)
 	if (buffer->alloc > 0) {
 		memset(buffer->buf, 0, buffer->alloc);
 		buffer->alloc = 0;
-		xfree(buffer->buf);
+		free(buffer->buf);
 	}
 }
 
