@@ -1,6 +1,6 @@
 # openssh-stdinkey
 
-This project is a branch of [OpenSSH][1] which modifies the
+This project is a fork of [OpenSSH][1] which modifies the
 `AuthorizedKeysCommand` directive in `sshd_config` (present in OpenSSH 6.2 and
 above) such that the public key of the incoming connection is sent to standard
 input of the command, thus providing a means to identify the connecting user
